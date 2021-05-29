@@ -1,2 +1,4 @@
 "github.com/Peanuttown/dd_contacts/ent/hook"
+"github.com/Peanuttown/dd_contacts/ent"
+"github.com/Peanuttown/dd_contacts/dao/models"
 	_ "github.com/go-sql-driver/mysql"
