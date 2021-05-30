@@ -36,6 +36,8 @@ type DeptMutation struct {
 	typ                            string
 	id                             *uint
 	name                           *string
+	generation                     *uint
+	addgeneration                  *uint
 	clearedFields                  map[string]struct{}
 	users                          map[string]struct{}
 	removedusers                   map[string]struct{}
@@ -43,6 +45,11 @@ type DeptMutation struct {
 	user_properties_in_dept        map[int]struct{}
 	removeduser_properties_in_dept map[int]struct{}
 	cleareduser_properties_in_dept bool
+	parent                         *uint
+	clearedparent                  bool
+	sub_depts                      map[uint]struct{}
+	removedsub_depts               map[uint]struct{}
+	clearedsub_depts               bool
 	done                           bool
 	oldValue                       func(context.Context) (*Dept, error)
 	predicates                     []predicate.Dept
@@ -169,6 +176,76 @@ func (m *DeptMutation) ResetName() {
 	m.name = nil
 }
 
+// SetGeneration sets the "generation" field.
+func (m *DeptMutation) SetGeneration(u uint) {
+	m.generation = &u
+	m.addgeneration = nil
+}
+
+// Generation returns the value of the "generation" field in the mutation.
+func (m *DeptMutation) Generation() (r uint, exists bool) {
+	v := m.generation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGeneration returns the old "generation" field's value of the Dept entity.
+// If the Dept object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DeptMutation) OldGeneration(ctx context.Context) (v uint, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldGeneration is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldGeneration requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGeneration: %w", err)
+	}
+	return oldValue.Generation, nil
+}
+
+// AddGeneration adds u to the "generation" field.
+func (m *DeptMutation) AddGeneration(u uint) {
+	if m.addgeneration != nil {
+		*m.addgeneration += u
+	} else {
+		m.addgeneration = &u
+	}
+}
+
+// AddedGeneration returns the value that was added to the "generation" field in this mutation.
+func (m *DeptMutation) AddedGeneration() (r uint, exists bool) {
+	v := m.addgeneration
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearGeneration clears the value of the "generation" field.
+func (m *DeptMutation) ClearGeneration() {
+	m.generation = nil
+	m.addgeneration = nil
+	m.clearedFields[dept.FieldGeneration] = struct{}{}
+}
+
+// GenerationCleared returns if the "generation" field was cleared in this mutation.
+func (m *DeptMutation) GenerationCleared() bool {
+	_, ok := m.clearedFields[dept.FieldGeneration]
+	return ok
+}
+
+// ResetGeneration resets all changes to the "generation" field.
+func (m *DeptMutation) ResetGeneration() {
+	m.generation = nil
+	m.addgeneration = nil
+	delete(m.clearedFields, dept.FieldGeneration)
+}
+
 // AddUserIDs adds the "users" edge to the User entity by ids.
 func (m *DeptMutation) AddUserIDs(ids ...string) {
 	if m.users == nil {
@@ -275,6 +352,98 @@ func (m *DeptMutation) ResetUserPropertiesInDept() {
 	m.removeduser_properties_in_dept = nil
 }
 
+// SetParentID sets the "parent" edge to the Dept entity by id.
+func (m *DeptMutation) SetParentID(id uint) {
+	m.parent = &id
+}
+
+// ClearParent clears the "parent" edge to the Dept entity.
+func (m *DeptMutation) ClearParent() {
+	m.clearedparent = true
+}
+
+// ParentCleared reports if the "parent" edge to the Dept entity was cleared.
+func (m *DeptMutation) ParentCleared() bool {
+	return m.clearedparent
+}
+
+// ParentID returns the "parent" edge ID in the mutation.
+func (m *DeptMutation) ParentID() (id uint, exists bool) {
+	if m.parent != nil {
+		return *m.parent, true
+	}
+	return
+}
+
+// ParentIDs returns the "parent" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ParentID instead. It exists only for internal usage by the builders.
+func (m *DeptMutation) ParentIDs() (ids []uint) {
+	if id := m.parent; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetParent resets all changes to the "parent" edge.
+func (m *DeptMutation) ResetParent() {
+	m.parent = nil
+	m.clearedparent = false
+}
+
+// AddSubDeptIDs adds the "sub_depts" edge to the Dept entity by ids.
+func (m *DeptMutation) AddSubDeptIDs(ids ...uint) {
+	if m.sub_depts == nil {
+		m.sub_depts = make(map[uint]struct{})
+	}
+	for i := range ids {
+		m.sub_depts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSubDepts clears the "sub_depts" edge to the Dept entity.
+func (m *DeptMutation) ClearSubDepts() {
+	m.clearedsub_depts = true
+}
+
+// SubDeptsCleared reports if the "sub_depts" edge to the Dept entity was cleared.
+func (m *DeptMutation) SubDeptsCleared() bool {
+	return m.clearedsub_depts
+}
+
+// RemoveSubDeptIDs removes the "sub_depts" edge to the Dept entity by IDs.
+func (m *DeptMutation) RemoveSubDeptIDs(ids ...uint) {
+	if m.removedsub_depts == nil {
+		m.removedsub_depts = make(map[uint]struct{})
+	}
+	for i := range ids {
+		m.removedsub_depts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSubDepts returns the removed IDs of the "sub_depts" edge to the Dept entity.
+func (m *DeptMutation) RemovedSubDeptsIDs() (ids []uint) {
+	for id := range m.removedsub_depts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// SubDeptsIDs returns the "sub_depts" edge IDs in the mutation.
+func (m *DeptMutation) SubDeptsIDs() (ids []uint) {
+	for id := range m.sub_depts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSubDepts resets all changes to the "sub_depts" edge.
+func (m *DeptMutation) ResetSubDepts() {
+	m.sub_depts = nil
+	m.clearedsub_depts = false
+	m.removedsub_depts = nil
+}
+
 // Op returns the operation name.
 func (m *DeptMutation) Op() Op {
 	return m.op
@@ -289,9 +458,12 @@ func (m *DeptMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *DeptMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 2)
 	if m.name != nil {
 		fields = append(fields, dept.FieldName)
+	}
+	if m.generation != nil {
+		fields = append(fields, dept.FieldGeneration)
 	}
 	return fields
 }
@@ -303,6 +475,8 @@ func (m *DeptMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case dept.FieldName:
 		return m.Name()
+	case dept.FieldGeneration:
+		return m.Generation()
 	}
 	return nil, false
 }
@@ -314,6 +488,8 @@ func (m *DeptMutation) OldField(ctx context.Context, name string) (ent.Value, er
 	switch name {
 	case dept.FieldName:
 		return m.OldName(ctx)
+	case dept.FieldGeneration:
+		return m.OldGeneration(ctx)
 	}
 	return nil, fmt.Errorf("unknown Dept field %s", name)
 }
@@ -330,6 +506,13 @@ func (m *DeptMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
+	case dept.FieldGeneration:
+		v, ok := value.(uint)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGeneration(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Dept field %s", name)
 }
@@ -337,13 +520,21 @@ func (m *DeptMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *DeptMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addgeneration != nil {
+		fields = append(fields, dept.FieldGeneration)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *DeptMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case dept.FieldGeneration:
+		return m.AddedGeneration()
+	}
 	return nil, false
 }
 
@@ -352,6 +543,13 @@ func (m *DeptMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *DeptMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case dept.FieldGeneration:
+		v, ok := value.(uint)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGeneration(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Dept numeric field %s", name)
 }
@@ -359,7 +557,11 @@ func (m *DeptMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *DeptMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(dept.FieldGeneration) {
+		fields = append(fields, dept.FieldGeneration)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -372,6 +574,11 @@ func (m *DeptMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *DeptMutation) ClearField(name string) error {
+	switch name {
+	case dept.FieldGeneration:
+		m.ClearGeneration()
+		return nil
+	}
 	return fmt.Errorf("unknown Dept nullable field %s", name)
 }
 
@@ -382,18 +589,27 @@ func (m *DeptMutation) ResetField(name string) error {
 	case dept.FieldName:
 		m.ResetName()
 		return nil
+	case dept.FieldGeneration:
+		m.ResetGeneration()
+		return nil
 	}
 	return fmt.Errorf("unknown Dept field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *DeptMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	if m.users != nil {
 		edges = append(edges, dept.EdgeUsers)
 	}
 	if m.user_properties_in_dept != nil {
 		edges = append(edges, dept.EdgeUserPropertiesInDept)
+	}
+	if m.parent != nil {
+		edges = append(edges, dept.EdgeParent)
+	}
+	if m.sub_depts != nil {
+		edges = append(edges, dept.EdgeSubDepts)
 	}
 	return edges
 }
@@ -414,18 +630,31 @@ func (m *DeptMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case dept.EdgeParent:
+		if id := m.parent; id != nil {
+			return []ent.Value{*id}
+		}
+	case dept.EdgeSubDepts:
+		ids := make([]ent.Value, 0, len(m.sub_depts))
+		for id := range m.sub_depts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *DeptMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	if m.removedusers != nil {
 		edges = append(edges, dept.EdgeUsers)
 	}
 	if m.removeduser_properties_in_dept != nil {
 		edges = append(edges, dept.EdgeUserPropertiesInDept)
+	}
+	if m.removedsub_depts != nil {
+		edges = append(edges, dept.EdgeSubDepts)
 	}
 	return edges
 }
@@ -446,18 +675,30 @@ func (m *DeptMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case dept.EdgeSubDepts:
+		ids := make([]ent.Value, 0, len(m.removedsub_depts))
+		for id := range m.removedsub_depts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *DeptMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 4)
 	if m.clearedusers {
 		edges = append(edges, dept.EdgeUsers)
 	}
 	if m.cleareduser_properties_in_dept {
 		edges = append(edges, dept.EdgeUserPropertiesInDept)
+	}
+	if m.clearedparent {
+		edges = append(edges, dept.EdgeParent)
+	}
+	if m.clearedsub_depts {
+		edges = append(edges, dept.EdgeSubDepts)
 	}
 	return edges
 }
@@ -470,6 +711,10 @@ func (m *DeptMutation) EdgeCleared(name string) bool {
 		return m.clearedusers
 	case dept.EdgeUserPropertiesInDept:
 		return m.cleareduser_properties_in_dept
+	case dept.EdgeParent:
+		return m.clearedparent
+	case dept.EdgeSubDepts:
+		return m.clearedsub_depts
 	}
 	return false
 }
@@ -478,6 +723,9 @@ func (m *DeptMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *DeptMutation) ClearEdge(name string) error {
 	switch name {
+	case dept.EdgeParent:
+		m.ClearParent()
+		return nil
 	}
 	return fmt.Errorf("unknown Dept unique edge %s", name)
 }
@@ -492,6 +740,12 @@ func (m *DeptMutation) ResetEdge(name string) error {
 	case dept.EdgeUserPropertiesInDept:
 		m.ResetUserPropertiesInDept()
 		return nil
+	case dept.EdgeParent:
+		m.ResetParent()
+		return nil
+	case dept.EdgeSubDepts:
+		m.ResetSubDepts()
+		return nil
 	}
 	return fmt.Errorf("unknown Dept edge %s", name)
 }
@@ -504,6 +758,8 @@ type UserMutation struct {
 	id                        *string
 	name                      *string
 	phone                     *string
+	generation                *uint
+	addgeneration             *uint
 	clearedFields             map[string]struct{}
 	depts                     map[uint]struct{}
 	removeddepts              map[uint]struct{}
@@ -673,6 +929,76 @@ func (m *UserMutation) ResetPhone() {
 	m.phone = nil
 }
 
+// SetGeneration sets the "generation" field.
+func (m *UserMutation) SetGeneration(u uint) {
+	m.generation = &u
+	m.addgeneration = nil
+}
+
+// Generation returns the value of the "generation" field in the mutation.
+func (m *UserMutation) Generation() (r uint, exists bool) {
+	v := m.generation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGeneration returns the old "generation" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldGeneration(ctx context.Context) (v uint, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldGeneration is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldGeneration requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGeneration: %w", err)
+	}
+	return oldValue.Generation, nil
+}
+
+// AddGeneration adds u to the "generation" field.
+func (m *UserMutation) AddGeneration(u uint) {
+	if m.addgeneration != nil {
+		*m.addgeneration += u
+	} else {
+		m.addgeneration = &u
+	}
+}
+
+// AddedGeneration returns the value that was added to the "generation" field in this mutation.
+func (m *UserMutation) AddedGeneration() (r uint, exists bool) {
+	v := m.addgeneration
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearGeneration clears the value of the "generation" field.
+func (m *UserMutation) ClearGeneration() {
+	m.generation = nil
+	m.addgeneration = nil
+	m.clearedFields[user.FieldGeneration] = struct{}{}
+}
+
+// GenerationCleared returns if the "generation" field was cleared in this mutation.
+func (m *UserMutation) GenerationCleared() bool {
+	_, ok := m.clearedFields[user.FieldGeneration]
+	return ok
+}
+
+// ResetGeneration resets all changes to the "generation" field.
+func (m *UserMutation) ResetGeneration() {
+	m.generation = nil
+	m.addgeneration = nil
+	delete(m.clearedFields, user.FieldGeneration)
+}
+
 // AddDeptIDs adds the "depts" edge to the Dept entity by ids.
 func (m *UserMutation) AddDeptIDs(ids ...uint) {
 	if m.depts == nil {
@@ -793,12 +1119,15 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
 	if m.name != nil {
 		fields = append(fields, user.FieldName)
 	}
 	if m.phone != nil {
 		fields = append(fields, user.FieldPhone)
+	}
+	if m.generation != nil {
+		fields = append(fields, user.FieldGeneration)
 	}
 	return fields
 }
@@ -812,6 +1141,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case user.FieldPhone:
 		return m.Phone()
+	case user.FieldGeneration:
+		return m.Generation()
 	}
 	return nil, false
 }
@@ -825,6 +1156,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldName(ctx)
 	case user.FieldPhone:
 		return m.OldPhone(ctx)
+	case user.FieldGeneration:
+		return m.OldGeneration(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -848,6 +1181,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPhone(v)
 		return nil
+	case user.FieldGeneration:
+		v, ok := value.(uint)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGeneration(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
 }
@@ -855,13 +1195,21 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *UserMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addgeneration != nil {
+		fields = append(fields, user.FieldGeneration)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case user.FieldGeneration:
+		return m.AddedGeneration()
+	}
 	return nil, false
 }
 
@@ -870,6 +1218,13 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *UserMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case user.FieldGeneration:
+		v, ok := value.(uint)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGeneration(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User numeric field %s", name)
 }
@@ -877,7 +1232,11 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *UserMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(user.FieldGeneration) {
+		fields = append(fields, user.FieldGeneration)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -890,6 +1249,11 @@ func (m *UserMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *UserMutation) ClearField(name string) error {
+	switch name {
+	case user.FieldGeneration:
+		m.ClearGeneration()
+		return nil
+	}
 	return fmt.Errorf("unknown User nullable field %s", name)
 }
 
@@ -902,6 +1266,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldPhone:
 		m.ResetPhone()
+		return nil
+	case user.FieldGeneration:
+		m.ResetGeneration()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)

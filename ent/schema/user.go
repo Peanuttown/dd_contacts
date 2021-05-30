@@ -22,6 +22,7 @@ func (User) Fields() []ent.Field {
 		field.String("id").StorageKey("user_id"),
 		field.String("name"),
 		field.String("phone"),
+		field.Uint("generation").Optional().Default(0),
 	}
 }
 

@@ -27,6 +27,20 @@ func (dc *DeptCreate) SetName(s string) *DeptCreate {
 	return dc
 }
 
+// SetGeneration sets the "generation" field.
+func (dc *DeptCreate) SetGeneration(u uint) *DeptCreate {
+	dc.mutation.SetGeneration(u)
+	return dc
+}
+
+// SetNillableGeneration sets the "generation" field if the given value is not nil.
+func (dc *DeptCreate) SetNillableGeneration(u *uint) *DeptCreate {
+	if u != nil {
+		dc.SetGeneration(*u)
+	}
+	return dc
+}
+
 // SetID sets the "id" field.
 func (dc *DeptCreate) SetID(u uint) *DeptCreate {
 	dc.mutation.SetID(u)
@@ -61,6 +75,40 @@ func (dc *DeptCreate) AddUserPropertiesInDept(u ...*UserPropertyInDept) *DeptCre
 		ids[i] = u[i].ID
 	}
 	return dc.AddUserPropertiesInDeptIDs(ids...)
+}
+
+// SetParentID sets the "parent" edge to the Dept entity by ID.
+func (dc *DeptCreate) SetParentID(id uint) *DeptCreate {
+	dc.mutation.SetParentID(id)
+	return dc
+}
+
+// SetNillableParentID sets the "parent" edge to the Dept entity by ID if the given value is not nil.
+func (dc *DeptCreate) SetNillableParentID(id *uint) *DeptCreate {
+	if id != nil {
+		dc = dc.SetParentID(*id)
+	}
+	return dc
+}
+
+// SetParent sets the "parent" edge to the Dept entity.
+func (dc *DeptCreate) SetParent(d *Dept) *DeptCreate {
+	return dc.SetParentID(d.ID)
+}
+
+// AddSubDeptIDs adds the "sub_depts" edge to the Dept entity by IDs.
+func (dc *DeptCreate) AddSubDeptIDs(ids ...uint) *DeptCreate {
+	dc.mutation.AddSubDeptIDs(ids...)
+	return dc
+}
+
+// AddSubDepts adds the "sub_depts" edges to the Dept entity.
+func (dc *DeptCreate) AddSubDepts(d ...*Dept) *DeptCreate {
+	ids := make([]uint, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return dc.AddSubDeptIDs(ids...)
 }
 
 // Mutation returns the DeptMutation object of the builder.
@@ -158,6 +206,14 @@ func (dc *DeptCreate) createSpec() (*Dept, *sqlgraph.CreateSpec) {
 		})
 		_node.Name = value
 	}
+	if value, ok := dc.mutation.Generation(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint,
+			Value:  value,
+			Column: dept.FieldGeneration,
+		})
+		_node.Generation = value
+	}
 	if nodes := dc.mutation.UsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -188,6 +244,45 @@ func (dc *DeptCreate) createSpec() (*Dept, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: userpropertyindept.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := dc.mutation.ParentIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   dept.ParentTable,
+			Columns: []string{dept.ParentColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint,
+					Column: dept.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.dept_sub_depts = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := dc.mutation.SubDeptsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   dept.SubDeptsTable,
+			Columns: []string{dept.SubDeptsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUint,
+					Column: dept.FieldID,
 				},
 			},
 		}

@@ -12,19 +12,29 @@ var (
 	DeptsColumns = []*schema.Column{
 		{Name: "dept_id", Type: field.TypeUint, Increment: true},
 		{Name: "name", Type: field.TypeString},
+		{Name: "generation", Type: field.TypeUint, Nullable: true},
+		{Name: "dept_sub_depts", Type: field.TypeUint, Nullable: true},
 	}
 	// DeptsTable holds the schema information for the "depts" table.
 	DeptsTable = &schema.Table{
-		Name:        "depts",
-		Columns:     DeptsColumns,
-		PrimaryKey:  []*schema.Column{DeptsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
+		Name:       "depts",
+		Columns:    DeptsColumns,
+		PrimaryKey: []*schema.Column{DeptsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "depts_depts_sub_depts",
+				Columns:    []*schema.Column{DeptsColumns[3]},
+				RefColumns: []*schema.Column{DeptsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "user_id", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString},
 		{Name: "phone", Type: field.TypeString},
+		{Name: "generation", Type: field.TypeUint, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -95,6 +105,7 @@ var (
 )
 
 func init() {
+	DeptsTable.ForeignKeys[0].RefTable = DeptsTable
 	UserPropertyInDeptsTable.ForeignKeys[0].RefTable = DeptsTable
 	UserPropertyInDeptsTable.ForeignKeys[1].RefTable = UsersTable
 	DeptUsersTable.ForeignKeys[0].RefTable = DeptsTable

@@ -19,6 +19,8 @@ type User struct {
 	Name string `json:"name,omitempty"`
 	// Phone holds the value of the "phone" field.
 	Phone string `json:"phone,omitempty"`
+	// Generation holds the value of the "generation" field.
+	Generation uint `json:"generation,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges UserEdges `json:"edges"`
@@ -58,6 +60,8 @@ func (*User) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case user.FieldGeneration:
+			values[i] = new(sql.NullInt64)
 		case user.FieldID, user.FieldName, user.FieldPhone:
 			values[i] = new(sql.NullString)
 		default:
@@ -92,6 +96,12 @@ func (u *User) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field phone", values[i])
 			} else if value.Valid {
 				u.Phone = value.String
+			}
+		case user.FieldGeneration:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field generation", values[i])
+			} else if value.Valid {
+				u.Generation = uint(value.Int64)
 			}
 		}
 	}
@@ -135,6 +145,8 @@ func (u *User) String() string {
 	builder.WriteString(u.Name)
 	builder.WriteString(", phone=")
 	builder.WriteString(u.Phone)
+	builder.WriteString(", generation=")
+	builder.WriteString(fmt.Sprintf("%v", u.Generation))
 	builder.WriteByte(')')
 	return builder.String()
 }

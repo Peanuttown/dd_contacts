@@ -13,7 +13,21 @@ type UserRequiredFields struct{
 
 type UserPropertiesInDepts struct{
 	DeptId uint
-	IsDeptLeader int
+	IsDeptLeader bool
+}
+
+func NewUserRequiredFields(
+	userId string,
+	name string,
+	propertiesInDepts []UserPropertiesInDepts,
+	phone string,
+)*UserRequiredFields{
+	return &UserRequiredFields{
+		UserId:userId,
+		Name:name,
+		PropertiesInDepts:propertiesInDepts,
+		Phone:phone,
+	}
 }
 
 type UserOptionalField func(userMutation *ent.UserMutation)
@@ -21,5 +35,11 @@ type UserOptionalField func(userMutation *ent.UserMutation)
 func UserOptionalFieldName(name string)UserOptionalField{
 	return func(userMutation *ent.UserMutation){
 		userMutation.SetName(name)
+	}
+}
+
+func UserOptionlGeneration(generation uint)UserOptionalField{
+	return func(mut *ent.UserMutation){
+		mut.SetGeneration(generation)
 	}
 }

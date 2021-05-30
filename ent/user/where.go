@@ -105,6 +105,13 @@ func Phone(v string) predicate.User {
 	})
 }
 
+// Generation applies equality check predicate on the "generation" field. It's identical to GenerationEQ.
+func Generation(v uint) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldGeneration), v))
+	})
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
@@ -324,6 +331,96 @@ func PhoneEqualFold(v string) predicate.User {
 func PhoneContainsFold(v string) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldPhone), v))
+	})
+}
+
+// GenerationEQ applies the EQ predicate on the "generation" field.
+func GenerationEQ(v uint) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationNEQ applies the NEQ predicate on the "generation" field.
+func GenerationNEQ(v uint) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationIn applies the In predicate on the "generation" field.
+func GenerationIn(vs ...uint) predicate.User {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.User(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldGeneration), v...))
+	})
+}
+
+// GenerationNotIn applies the NotIn predicate on the "generation" field.
+func GenerationNotIn(vs ...uint) predicate.User {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.User(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldGeneration), v...))
+	})
+}
+
+// GenerationGT applies the GT predicate on the "generation" field.
+func GenerationGT(v uint) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationGTE applies the GTE predicate on the "generation" field.
+func GenerationGTE(v uint) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationLT applies the LT predicate on the "generation" field.
+func GenerationLT(v uint) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationLTE applies the LTE predicate on the "generation" field.
+func GenerationLTE(v uint) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationIsNil applies the IsNil predicate on the "generation" field.
+func GenerationIsNil() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldGeneration)))
+	})
+}
+
+// GenerationNotNil applies the NotNil predicate on the "generation" field.
+func GenerationNotNil() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldGeneration)))
 	})
 }
 

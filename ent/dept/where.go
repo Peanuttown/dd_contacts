@@ -98,6 +98,13 @@ func Name(v string) predicate.Dept {
 	})
 }
 
+// Generation applies equality check predicate on the "generation" field. It's identical to GenerationEQ.
+func Generation(v uint) predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldGeneration), v))
+	})
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Dept {
 	return predicate.Dept(func(s *sql.Selector) {
@@ -209,6 +216,96 @@ func NameContainsFold(v string) predicate.Dept {
 	})
 }
 
+// GenerationEQ applies the EQ predicate on the "generation" field.
+func GenerationEQ(v uint) predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationNEQ applies the NEQ predicate on the "generation" field.
+func GenerationNEQ(v uint) predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationIn applies the In predicate on the "generation" field.
+func GenerationIn(vs ...uint) predicate.Dept {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Dept(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldGeneration), v...))
+	})
+}
+
+// GenerationNotIn applies the NotIn predicate on the "generation" field.
+func GenerationNotIn(vs ...uint) predicate.Dept {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Dept(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldGeneration), v...))
+	})
+}
+
+// GenerationGT applies the GT predicate on the "generation" field.
+func GenerationGT(v uint) predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationGTE applies the GTE predicate on the "generation" field.
+func GenerationGTE(v uint) predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationLT applies the LT predicate on the "generation" field.
+func GenerationLT(v uint) predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationLTE applies the LTE predicate on the "generation" field.
+func GenerationLTE(v uint) predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldGeneration), v))
+	})
+}
+
+// GenerationIsNil applies the IsNil predicate on the "generation" field.
+func GenerationIsNil() predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldGeneration)))
+	})
+}
+
+// GenerationNotNil applies the NotNil predicate on the "generation" field.
+func GenerationNotNil() predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldGeneration)))
+	})
+}
+
 // HasUsers applies the HasEdge predicate on the "users" edge.
 func HasUsers() predicate.Dept {
 	return predicate.Dept(func(s *sql.Selector) {
@@ -256,6 +353,62 @@ func HasUserPropertiesInDeptWith(preds ...predicate.UserPropertyInDept) predicat
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(UserPropertiesInDeptInverseTable, UserPropertyInDeptFieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, UserPropertiesInDeptTable, UserPropertiesInDeptColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasParent applies the HasEdge predicate on the "parent" edge.
+func HasParent() predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ParentTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ParentTable, ParentColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasParentWith applies the HasEdge predicate on the "parent" edge with a given conditions (other predicates).
+func HasParentWith(preds ...predicate.Dept) predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ParentTable, ParentColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSubDepts applies the HasEdge predicate on the "sub_depts" edge.
+func HasSubDepts() predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(SubDeptsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SubDeptsTable, SubDeptsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSubDeptsWith applies the HasEdge predicate on the "sub_depts" edge with a given conditions (other predicates).
+func HasSubDeptsWith(preds ...predicate.Dept) predicate.Dept {
+	return predicate.Dept(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SubDeptsTable, SubDeptsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

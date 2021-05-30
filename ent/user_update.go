@@ -40,6 +40,33 @@ func (uu *UserUpdate) SetPhone(s string) *UserUpdate {
 	return uu
 }
 
+// SetGeneration sets the "generation" field.
+func (uu *UserUpdate) SetGeneration(u uint) *UserUpdate {
+	uu.mutation.ResetGeneration()
+	uu.mutation.SetGeneration(u)
+	return uu
+}
+
+// SetNillableGeneration sets the "generation" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableGeneration(u *uint) *UserUpdate {
+	if u != nil {
+		uu.SetGeneration(*u)
+	}
+	return uu
+}
+
+// AddGeneration adds u to the "generation" field.
+func (uu *UserUpdate) AddGeneration(u uint) *UserUpdate {
+	uu.mutation.AddGeneration(u)
+	return uu
+}
+
+// ClearGeneration clears the value of the "generation" field.
+func (uu *UserUpdate) ClearGeneration() *UserUpdate {
+	uu.mutation.ClearGeneration()
+	return uu
+}
+
 // AddDeptIDs adds the "depts" edge to the Dept entity by IDs.
 func (uu *UserUpdate) AddDeptIDs(ids ...uint) *UserUpdate {
 	uu.mutation.AddDeptIDs(ids...)
@@ -200,6 +227,26 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: user.FieldPhone,
 		})
 	}
+	if value, ok := uu.mutation.Generation(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint,
+			Value:  value,
+			Column: user.FieldGeneration,
+		})
+	}
+	if value, ok := uu.mutation.AddedGeneration(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint,
+			Value:  value,
+			Column: user.FieldGeneration,
+		})
+	}
+	if uu.mutation.GenerationCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint,
+			Column: user.FieldGeneration,
+		})
+	}
 	if uu.mutation.DeptsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -336,6 +383,33 @@ func (uuo *UserUpdateOne) SetName(s string) *UserUpdateOne {
 // SetPhone sets the "phone" field.
 func (uuo *UserUpdateOne) SetPhone(s string) *UserUpdateOne {
 	uuo.mutation.SetPhone(s)
+	return uuo
+}
+
+// SetGeneration sets the "generation" field.
+func (uuo *UserUpdateOne) SetGeneration(u uint) *UserUpdateOne {
+	uuo.mutation.ResetGeneration()
+	uuo.mutation.SetGeneration(u)
+	return uuo
+}
+
+// SetNillableGeneration sets the "generation" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableGeneration(u *uint) *UserUpdateOne {
+	if u != nil {
+		uuo.SetGeneration(*u)
+	}
+	return uuo
+}
+
+// AddGeneration adds u to the "generation" field.
+func (uuo *UserUpdateOne) AddGeneration(u uint) *UserUpdateOne {
+	uuo.mutation.AddGeneration(u)
+	return uuo
+}
+
+// ClearGeneration clears the value of the "generation" field.
+func (uuo *UserUpdateOne) ClearGeneration() *UserUpdateOne {
+	uuo.mutation.ClearGeneration()
 	return uuo
 }
 
@@ -521,6 +595,26 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Type:   field.TypeString,
 			Value:  value,
 			Column: user.FieldPhone,
+		})
+	}
+	if value, ok := uuo.mutation.Generation(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint,
+			Value:  value,
+			Column: user.FieldGeneration,
+		})
+	}
+	if value, ok := uuo.mutation.AddedGeneration(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint,
+			Value:  value,
+			Column: user.FieldGeneration,
+		})
+	}
+	if uuo.mutation.GenerationCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint,
+			Column: user.FieldGeneration,
 		})
 	}
 	if uuo.mutation.DeptsCleared() {

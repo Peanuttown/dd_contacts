@@ -2,7 +2,9 @@ package ent
 
 import(
 	"fmt"
+	"runtime/debug"
 	"context"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 
@@ -48,6 +50,7 @@ func (this *ClientWrapper) TxDo(ctx context.Context,f TxDoFunc) (err error){
 		e := recover()
 		if e != nil{
 			err = fmt.Errorf("%v",e)
+			debug.PrintStack()
 			tx.Rollback()
 			return
 		}

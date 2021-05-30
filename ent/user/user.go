@@ -15,6 +15,8 @@ const (
 	FieldName = "name"
 	// FieldPhone holds the string denoting the phone field in the database.
 	FieldPhone = "phone"
+	// FieldGeneration holds the string denoting the generation field in the database.
+	FieldGeneration = "generation"
 	// EdgeDepts holds the string denoting the depts edge name in mutations.
 	EdgeDepts = "depts"
 	// EdgePropertiesInDept holds the string denoting the properties_in_dept edge name in mutations.
@@ -44,6 +46,7 @@ var Columns = []string{
 	FieldID,
 	FieldName,
 	FieldPhone,
+	FieldGeneration,
 }
 
 var (

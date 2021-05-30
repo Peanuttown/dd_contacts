@@ -13,10 +13,16 @@ const (
 	FieldID = "dept_id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldGeneration holds the string denoting the generation field in the database.
+	FieldGeneration = "generation"
 	// EdgeUsers holds the string denoting the users edge name in mutations.
 	EdgeUsers = "users"
 	// EdgeUserPropertiesInDept holds the string denoting the user_properties_in_dept edge name in mutations.
 	EdgeUserPropertiesInDept = "user_properties_in_dept"
+	// EdgeParent holds the string denoting the parent edge name in mutations.
+	EdgeParent = "parent"
+	// EdgeSubDepts holds the string denoting the sub_depts edge name in mutations.
+	EdgeSubDepts = "sub_depts"
 	// UserFieldID holds the string denoting the ID field of the User.
 	UserFieldID = "user_id"
 	// UserPropertyInDeptFieldID holds the string denoting the ID field of the UserPropertyInDept.
@@ -35,12 +41,27 @@ const (
 	UserPropertiesInDeptInverseTable = "user_property_in_depts"
 	// UserPropertiesInDeptColumn is the table column denoting the user_properties_in_dept relation/edge.
 	UserPropertiesInDeptColumn = "dept_id"
+	// ParentTable is the table the holds the parent relation/edge.
+	ParentTable = "depts"
+	// ParentColumn is the table column denoting the parent relation/edge.
+	ParentColumn = "dept_sub_depts"
+	// SubDeptsTable is the table the holds the sub_depts relation/edge.
+	SubDeptsTable = "depts"
+	// SubDeptsColumn is the table column denoting the sub_depts relation/edge.
+	SubDeptsColumn = "dept_sub_depts"
 )
 
 // Columns holds all SQL columns for dept fields.
 var Columns = []string{
 	FieldID,
 	FieldName,
+	FieldGeneration,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the "depts"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"dept_sub_depts",
 }
 
 var (
@@ -53,6 +74,11 @@ var (
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}

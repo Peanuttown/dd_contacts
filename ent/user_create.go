@@ -33,6 +33,20 @@ func (uc *UserCreate) SetPhone(s string) *UserCreate {
 	return uc
 }
 
+// SetGeneration sets the "generation" field.
+func (uc *UserCreate) SetGeneration(u uint) *UserCreate {
+	uc.mutation.SetGeneration(u)
+	return uc
+}
+
+// SetNillableGeneration sets the "generation" field if the given value is not nil.
+func (uc *UserCreate) SetNillableGeneration(u *uint) *UserCreate {
+	if u != nil {
+		uc.SetGeneration(*u)
+	}
+	return uc
+}
+
 // SetID sets the "id" field.
 func (uc *UserCreate) SetID(s string) *UserCreate {
 	uc.mutation.SetID(s)
@@ -170,6 +184,14 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Column: user.FieldPhone,
 		})
 		_node.Phone = value
+	}
+	if value, ok := uc.mutation.Generation(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint,
+			Value:  value,
+			Column: user.FieldGeneration,
+		})
+		_node.Generation = value
 	}
 	if nodes := uc.mutation.DeptsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -17,9 +17,12 @@ type Dept struct {
 	ID uint `json:"id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Generation holds the value of the "generation" field.
+	Generation uint `json:"generation,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the DeptQuery when eager-loading is set.
-	Edges DeptEdges `json:"edges"`
+	Edges          DeptEdges `json:"edges"`
+	dept_sub_depts *uint
 }
 
 // DeptEdges holds the relations/edges for other nodes in the graph.
@@ -28,9 +31,13 @@ type DeptEdges struct {
 	Users []*User `json:"users,omitempty"`
 	// UserPropertiesInDept holds the value of the user_properties_in_dept edge.
 	UserPropertiesInDept []*UserPropertyInDept `json:"user_properties_in_dept,omitempty"`
+	// Parent holds the value of the parent edge.
+	Parent *Dept `json:"parent,omitempty"`
+	// SubDepts holds the value of the sub_depts edge.
+	SubDepts []*Dept `json:"sub_depts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [4]bool
 }
 
 // UsersOrErr returns the Users value or an error if the edge
@@ -51,15 +58,40 @@ func (e DeptEdges) UserPropertiesInDeptOrErr() ([]*UserPropertyInDept, error) {
 	return nil, &NotLoadedError{edge: "user_properties_in_dept"}
 }
 
+// ParentOrErr returns the Parent value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e DeptEdges) ParentOrErr() (*Dept, error) {
+	if e.loadedTypes[2] {
+		if e.Parent == nil {
+			// The edge parent was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: dept.Label}
+		}
+		return e.Parent, nil
+	}
+	return nil, &NotLoadedError{edge: "parent"}
+}
+
+// SubDeptsOrErr returns the SubDepts value or an error if the edge
+// was not loaded in eager-loading.
+func (e DeptEdges) SubDeptsOrErr() ([]*Dept, error) {
+	if e.loadedTypes[3] {
+		return e.SubDepts, nil
+	}
+	return nil, &NotLoadedError{edge: "sub_depts"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Dept) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case dept.FieldID:
+		case dept.FieldID, dept.FieldGeneration:
 			values[i] = new(sql.NullInt64)
 		case dept.FieldName:
 			values[i] = new(sql.NullString)
+		case dept.ForeignKeys[0]: // dept_sub_depts
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Dept", columns[i])
 		}
@@ -87,6 +119,19 @@ func (d *Dept) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				d.Name = value.String
 			}
+		case dept.FieldGeneration:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field generation", values[i])
+			} else if value.Valid {
+				d.Generation = uint(value.Int64)
+			}
+		case dept.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field dept_sub_depts", value)
+			} else if value.Valid {
+				d.dept_sub_depts = new(uint)
+				*d.dept_sub_depts = uint(value.Int64)
+			}
 		}
 	}
 	return nil
@@ -100,6 +145,16 @@ func (d *Dept) QueryUsers() *UserQuery {
 // QueryUserPropertiesInDept queries the "user_properties_in_dept" edge of the Dept entity.
 func (d *Dept) QueryUserPropertiesInDept() *UserPropertyInDeptQuery {
 	return (&DeptClient{config: d.config}).QueryUserPropertiesInDept(d)
+}
+
+// QueryParent queries the "parent" edge of the Dept entity.
+func (d *Dept) QueryParent() *DeptQuery {
+	return (&DeptClient{config: d.config}).QueryParent(d)
+}
+
+// QuerySubDepts queries the "sub_depts" edge of the Dept entity.
+func (d *Dept) QuerySubDepts() *DeptQuery {
+	return (&DeptClient{config: d.config}).QuerySubDepts(d)
 }
 
 // Update returns a builder for updating this Dept.
@@ -127,6 +182,8 @@ func (d *Dept) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", d.ID))
 	builder.WriteString(", name=")
 	builder.WriteString(d.Name)
+	builder.WriteString(", generation=")
+	builder.WriteString(fmt.Sprintf("%v", d.Generation))
 	builder.WriteByte(')')
 	return builder.String()
 }

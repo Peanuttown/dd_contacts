@@ -30,6 +30,9 @@ type DeptQuery struct {
 	// eager-loading edges.
 	withUsers                *UserQuery
 	withUserPropertiesInDept *UserPropertyInDeptQuery
+	withParent               *DeptQuery
+	withSubDepts             *DeptQuery
+	withFKs                  bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -103,6 +106,50 @@ func (dq *DeptQuery) QueryUserPropertiesInDept() *UserPropertyInDeptQuery {
 			sqlgraph.From(dept.Table, dept.FieldID, selector),
 			sqlgraph.To(userpropertyindept.Table, userpropertyindept.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, dept.UserPropertiesInDeptTable, dept.UserPropertiesInDeptColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryParent chains the current query on the "parent" edge.
+func (dq *DeptQuery) QueryParent() *DeptQuery {
+	query := &DeptQuery{config: dq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := dq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := dq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dept.Table, dept.FieldID, selector),
+			sqlgraph.To(dept.Table, dept.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, dept.ParentTable, dept.ParentColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySubDepts chains the current query on the "sub_depts" edge.
+func (dq *DeptQuery) QuerySubDepts() *DeptQuery {
+	query := &DeptQuery{config: dq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := dq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := dq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dept.Table, dept.FieldID, selector),
+			sqlgraph.To(dept.Table, dept.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, dept.SubDeptsTable, dept.SubDeptsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
 		return fromU, nil
@@ -293,6 +340,8 @@ func (dq *DeptQuery) Clone() *DeptQuery {
 		predicates:               append([]predicate.Dept{}, dq.predicates...),
 		withUsers:                dq.withUsers.Clone(),
 		withUserPropertiesInDept: dq.withUserPropertiesInDept.Clone(),
+		withParent:               dq.withParent.Clone(),
+		withSubDepts:             dq.withSubDepts.Clone(),
 		// clone intermediate query.
 		sql:  dq.sql.Clone(),
 		path: dq.path,
@@ -318,6 +367,28 @@ func (dq *DeptQuery) WithUserPropertiesInDept(opts ...func(*UserPropertyInDeptQu
 		opt(query)
 	}
 	dq.withUserPropertiesInDept = query
+	return dq
+}
+
+// WithParent tells the query-builder to eager-load the nodes that are connected to
+// the "parent" edge. The optional arguments are used to configure the query builder of the edge.
+func (dq *DeptQuery) WithParent(opts ...func(*DeptQuery)) *DeptQuery {
+	query := &DeptQuery{config: dq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	dq.withParent = query
+	return dq
+}
+
+// WithSubDepts tells the query-builder to eager-load the nodes that are connected to
+// the "sub_depts" edge. The optional arguments are used to configure the query builder of the edge.
+func (dq *DeptQuery) WithSubDepts(opts ...func(*DeptQuery)) *DeptQuery {
+	query := &DeptQuery{config: dq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	dq.withSubDepts = query
 	return dq
 }
 
@@ -385,12 +456,21 @@ func (dq *DeptQuery) prepareQuery(ctx context.Context) error {
 func (dq *DeptQuery) sqlAll(ctx context.Context) ([]*Dept, error) {
 	var (
 		nodes       = []*Dept{}
+		withFKs     = dq.withFKs
 		_spec       = dq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [4]bool{
 			dq.withUsers != nil,
 			dq.withUserPropertiesInDept != nil,
+			dq.withParent != nil,
+			dq.withSubDepts != nil,
 		}
 	)
+	if dq.withParent != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, dept.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &Dept{config: dq.config}
 		nodes = append(nodes, node)
@@ -498,6 +578,64 @@ func (dq *DeptQuery) sqlAll(ctx context.Context) ([]*Dept, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "dept_id" returned %v for node %v`, fk, n.ID)
 			}
 			node.Edges.UserPropertiesInDept = append(node.Edges.UserPropertiesInDept, n)
+		}
+	}
+
+	if query := dq.withParent; query != nil {
+		ids := make([]uint, 0, len(nodes))
+		nodeids := make(map[uint][]*Dept)
+		for i := range nodes {
+			if nodes[i].dept_sub_depts == nil {
+				continue
+			}
+			fk := *nodes[i].dept_sub_depts
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
+		}
+		query.Where(dept.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "dept_sub_depts" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Parent = n
+			}
+		}
+	}
+
+	if query := dq.withSubDepts; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[uint]*Dept)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.SubDepts = []*Dept{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Dept(func(s *sql.Selector) {
+			s.Where(sql.InValues(dept.SubDeptsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.dept_sub_depts
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "dept_sub_depts" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "dept_sub_depts" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.SubDepts = append(node.Edges.SubDepts, n)
 		}
 	}
 

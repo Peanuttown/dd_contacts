@@ -24,6 +24,7 @@ func (Dept) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint("id").StorageKey("dept_id"),
 		field.String("name"),
+		field.Uint("generation").Optional().Default(0),
 	}
 }
 
@@ -37,6 +38,7 @@ func (Dept) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To(EDGE_DEPT_TO_USERS,User.Type),
 		edge.To(EDGE_DEPT_TO_USER_PROPERTIES_IN_DEPT,UserPropertyInDept.Type),
+		edge.To("sub_depts",Dept.Type).From("parent").Unique(),
 	}
 }
 

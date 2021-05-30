@@ -2,3 +2,4 @@
 "github.com/Peanuttown/dd_contacts/ent"
 "github.com/Peanuttown/dd_contacts/dao/models"
 	_ "github.com/go-sql-driver/mysql"
+  "github.com/Peanuttown/tzzGoUtil"

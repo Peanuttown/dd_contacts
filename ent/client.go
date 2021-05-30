@@ -253,6 +253,38 @@ func (c *DeptClient) QueryUserPropertiesInDept(d *Dept) *UserPropertyInDeptQuery
 	return query
 }
 
+// QueryParent queries the parent edge of a Dept.
+func (c *DeptClient) QueryParent(d *Dept) *DeptQuery {
+	query := &DeptQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dept.Table, dept.FieldID, id),
+			sqlgraph.To(dept.Table, dept.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, dept.ParentTable, dept.ParentColumn),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySubDepts queries the sub_depts edge of a Dept.
+func (c *DeptClient) QuerySubDepts(d *Dept) *DeptQuery {
+	query := &DeptQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(dept.Table, dept.FieldID, id),
+			sqlgraph.To(dept.Table, dept.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, dept.SubDeptsTable, dept.SubDeptsColumn),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *DeptClient) Hooks() []Hook {
 	hooks := c.hooks.Dept
