@@ -9,9 +9,10 @@ import(
 	"github.com/Peanuttown/dd_contacts/dao/models"
 	"github.com/Peanuttown/dd_api"
   dt "github.com/Peanuttown/tzzGoUtil/datastruct"
+  "github.com/Peanuttown/tzzGoUtil/log"
 )
 
-func SyncDept(ctx context.Context,dbClient *ent.ClientWrapper,ddApiClient *dd_api.Client)(error){
+func SyncDept(ctx context.Context,dbClient *ent.ClientWrapper,ddApiClient *dd_api.Client,logger log.LoggerLite)(error){
 	// < sync_dept
 	// steps: 
 	// << 
@@ -24,11 +25,12 @@ func SyncDept(ctx context.Context,dbClient *ent.ClientWrapper,ddApiClient *dd_ap
 	return daoFac.NewDaoFactoryTx(dbClient).TxDo(
 		ctx,
 		func (ctx context.Context,daoF daoFac.DaoFactoryI)error{
+			logger.Debug("⌛  Building dept tree by dingding api")
 			deptTreeBuildByApi,err := dd_api.BuildDeptTreeByApi(ctx,dd_api.ROOT_DEPT_ID,ddApiClient)
 			if err != nil{
 				return err
 			}
-			fmt.Println(deptTreeBuildByApi.ToString(ctx))
+			logger.Debug("✅ Success Build dept tree by")
 			// TODO GOON
 			err = deptTreeBuildByApi.DepthFirstDo(
 				ctx,
@@ -42,6 +44,7 @@ func SyncDept(ctx context.Context,dbClient *ent.ClientWrapper,ddApiClient *dd_ap
 					if parentDeptNode != nil{
 						parentId = (parentDeptNode.GetValue().(*dd_api.DeptNodeValue)).DeptId
 					}
+					logger.Debugf("⌛  Syncing dept %s",dept.Name)
 					// upsert to db
 					err = daoF.NewDaoDept().Upsert(
 						ctx,
@@ -55,9 +58,21 @@ func SyncDept(ctx context.Context,dbClient *ent.ClientWrapper,ddApiClient *dd_ap
 					if err != nil{
 						return err
 					}
+					return nil
+				},
+			)
+			if err != nil{
+				return err
+			}
+			err = deptTreeBuildByApi.DepthFirstDo(
+				ctx,
+				func(
+					ctx context.Context,
+					node *dt.Node,
+				)error{
+					dept := node.GetValue().(*dd_api.DeptNodeValue)
 					// update uesr in the dept
 					userIdsInTheDepts,err := dd_api.NewApiDeptGetUserIds(dept.DeptId).ExecBy(ctx,ddApiClient)
-					fmt.Println("users: ",userIdsInTheDepts)
 					if err != nil{
 						return err
 					}
@@ -74,7 +89,7 @@ func SyncDept(ctx context.Context,dbClient *ent.ClientWrapper,ddApiClient *dd_ap
 								IsDeptLeader:p.Leader,
 							})
 						}
-						fmt.Println("userId is ",userId)
+						logger.Debug("⌛  Sync user %s",userInfo.Name)
 						err = daoF.NewDaoUser().Upsert(
 							ctx,
 							models.NewUserRequiredFields(
@@ -95,7 +110,7 @@ func SyncDept(ctx context.Context,dbClient *ent.ClientWrapper,ddApiClient *dd_ap
 			if err != nil{
 				return err
 			}
-			fmt.Println("start clear ")
+			logger.Debug("⌛  Clearing outdate dept and user")
 			// clean uesr and dept
 			deptsToRemove,err := daoF.NewDaoDept().FindByNotGeneration(ctx,generation)
 			if err != nil{

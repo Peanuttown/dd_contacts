@@ -11,6 +11,7 @@ import(
 		"testing"
 	"github.com/Peanuttown/dd_contacts/ent"
   "github.com/Peanuttown/tzzGoUtil/encoding"
+  "github.com/Peanuttown/tzzGoUtil/log"
 	"github.com/Peanuttown/dd_api"
 )
 
@@ -57,7 +58,8 @@ err =	encoding.UnMarshalByFile(
 
 func TestSyncDept(t *testing.T){
 	ctx := context.Background()
-	err := SyncDept(ctx,testDBClient(),testDDApiClient())
+	logger := log.NewEmptyLogger()
+	err := SyncDept(ctx,testDBClient(),testDDApiClient(),logger)
 	if err !=nil{
 		t.Fatal(err)
 	}
