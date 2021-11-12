@@ -7,6 +7,7 @@ require (
 	github.com/Peanuttown/dd_api v0.0.9
 	github.com/Peanuttown/tzzGoUtil v1.2.2
 	github.com/go-sql-driver/mysql v1.5.1-0.20200311113236-681ffa848bae
+	github.com/pigfall/tzzGoUtil v1.4.0 // indirect
 )
 
 replace github.com/Peanuttown/tzzGoUtil v1.2.2 => ../tzzGoUtil
